@@ -23,7 +23,7 @@ import Control.Applicative ((<$>))
 import Network.Socket (HostName, PortNumber, Socket, SockAddr)
 import qualified Network.Socket.ByteString as NBS (recvFrom, sendManyTo)
 import Network.Transport.Internal (decodeInt32, encodeInt32)
-import Network.Multicast (multicastSender, multicastReceiver)
+import Network.Multicast (multicastSender, multicastReceiver, setInterface)
 
 --------------------------------------------------------------------------------
 -- Top-level API                                                              --
@@ -39,13 +39,16 @@ import Network.Multicast (multicastSender, multicastReceiver)
 -- NOTE: By rights the two functions should be "locally" polymorphic in 'a',
 -- but this requires impredicative types.
 initMulticast :: forall a. Binary a
-              => HostName    -- ^ Multicast IP
+              => HostName    -- ^ Source Address
+              -> HostName    -- ^ Multicast IP
               -> PortNumber  -- ^ Port number
               -> Int         -- ^ Maximum message size
               -> IO (IO (a, SockAddr), a -> IO ())
-initMulticast host port bufferSize = do
+initMulticast src host port bufferSize = do
     (sendSock, sendAddr) <- multicastSender host port
+    setInterface sendSock src
     readSock <- multicastReceiver host port
+    setInterface readSock src
     st <- newIORef Map.empty
     return (recvBinary readSock st bufferSize, writer sendSock sendAddr)
   where

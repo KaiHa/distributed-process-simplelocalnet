@@ -175,7 +175,7 @@ data BackendState = BackendState {
 initializeBackend :: N.HostName -> N.ServiceName -> RemoteTable -> IO Backend
 initializeBackend host port rtable = do
   mTransport   <- NT.createTransport host port NT.defaultTCPParameters
-  (recv, sendp) <- initMulticast  "224.0.0.99" 9999 1024
+  (recv, sendp) <- initMulticast host "224.0.0.99" 9999 1024
   (_, backendState) <- fixIO $ \ ~(tid, _) -> do
     backendState <- newMVar BackendState
                       { _localNodes      = []
